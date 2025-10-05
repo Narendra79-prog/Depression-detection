@@ -1,0 +1,43 @@
+Build a **cross-platform Flutter app** called "MindVoice" for mental health screening and AI support.  
+The app has two levels of assessment:
+
+**Level 1 – Standard Questionnaire**
+- Collect user demographics (name, age, gender, relationship status).
+- Implement the PHQ-9 depression questionnaire (9 multiple-choice questions).
+- Score the PHQ-9 automatically (0–27) and categorize: Minimal, Mild, Moderate, Moderately Severe, Severe.
+
+**Level 2 – Speech-Based AI Analysis**
+- After the questionnaire, ask the user to answer open-ended questions verbally (e.g., "How have you been feeling lately?").
+- Use microphone input + speech_to_text plugin to transcribe user answers.
+- Extract basic audio features (pitch, energy, speaking rate, pause duration) from raw audio.
+- Analyze text with simple NLP: sentiment score, keyword analysis (e.g., negative words, pronoun usage).
+- Combine PHQ-9 score + audio features + text features as input to an ML model.
+- If online, call a Hugging Face/Flask API model. If offline, run a TensorFlow Lite model included in assets.
+- Output a final severity category (Mild, Moderate, Severe) with explanation.
+
+**Therapy & Resources**
+- Based on severity, suggest coping tools (breathing, meditation), an AI therapist chatbot, or referral to local clinics.
+- Integrate Google Maps API for “Find nearby therapist” option.
+
+**App Structure**
+- `lib/main.dart`: entry point, navigation.
+- `lib/screens/DemographicsScreen.dart`: collect user info.
+- `lib/screens/PHQ9Screen.dart`: questionnaire.
+- `lib/screens/VoiceScreen.dart`: record speech and show transcript.
+- `lib/screens/ResultScreen.dart`: final diagnosis + resources.
+- `lib/services/SpeechService.dart`: microphone + STT.
+- `lib/services/AudioFeatures.dart`: extract pitch/energy.
+- `lib/services/TextAnalysis.dart`: sentiment + keywords.
+- `lib/services/HealthModel.dart`: run local/remote ML scoring.
+
+**Dependencies**
+- `speech_to_text` for voice recognition.
+- `flutter_sound` or `audioplayers` for audio recording.
+- `fft` for audio signal processing.
+- `tflite_flutter` for TensorFlow Lite inference.
+- `http` for API calls.
+- `google_maps_flutter` for clinic locator.
+
+Follow Flutter best practices: modular code, async/await, error handling. Include comments and clear state management.
+
+Deliver the full project scaffold with example code in each file.
