@@ -1,11 +1,13 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import cors from "cors";               // <-- add this
 import { simulateFromPhq } from "./services/simulator";
 
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+
 import { 
   demographicsSchema, 
   phq9ResponseSchema, 
@@ -23,7 +25,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
   // Multer configuration to save uploaded files to server/uploads
-  const storage = multer.diskStorage({
+   const multerStorage = multer.diskStorage({
     destination: function (_req, _file, cb) {
       cb(null, uploadsDir);
     },
@@ -33,7 +35,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cb(null, `${unique}_${safe}`);
     },
   });
-  const upload = multer({ storage });
+  const upload = multer({ storage: multerStorage });
+
 
   // Allow CORS so your client can call this API during development
   // (optional: tighten origin in production)
@@ -43,18 +46,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // If app is not the express instance or CORS already set, ignore
   }
 
+    // Create new assessment (now computes phq9Score if missing)
   app.post("/api/assessments", async (req, res) => {
     try {
+      // Validate incoming payload with the same schema
       const validatedData = insertAssessmentSchema.parse(req.body);
+
+      // If phq9Score is missing but phq9Responses is present, compute the total.
+      // Also validate each response using phq9ResponseSchema to be safe.
+      if ((validatedData as any).phq9Score === undefined) {
+        const responses = (validatedData as any).phq9Responses;
+        if (Array.isArray(responses) && responses.length > 0) {
+          // Validate each response and sum scores
+          const validatedResponses = responses.map((r: any) =>
+            phq9ResponseSchema.parse(r)
+          );
+          const phq9Score = validatedResponses.reduce((sum: number, r: any) => sum + (r.score ?? 0), 0);
+          // attach the computed values back to the payload we will store
+          (validatedData as any).phq9Responses = validatedResponses;
+          (validatedData as any).phq9Score = phq9Score;
+        } else {
+          // If no responses provided, set default 0 (safe fallback)
+          (validatedData as any).phq9Score = 0;
+          (validatedData as any).phq9Responses = [];
+        }
+      }
+
       const assessment = await storage.createAssessment(validatedData);
       res.json(assessment);
     } catch (error) {
-      res.status(400).json({ 
-        message: "Invalid assessment data", 
-        error: error instanceof Error ? error.message : "Unknown error" 
+      // Keep helpful error message for debugging
+      res.status(400).json({
+        message: "Invalid assessment data",
+        error: error instanceof Error ? error.message : String(error),
       });
     }
   });
+
 
   // Update assessment demographics
   app.patch("/api/assessments/:id/demographics", async (req, res) => {
