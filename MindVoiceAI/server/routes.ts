@@ -1,7 +1,7 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { simulateFromPhq } from "./simulator";
+import { simulateFromPhq } from "./services/simulator";
 
 import type { Express } from "express";
 import { createServer, type Server } from "http";
